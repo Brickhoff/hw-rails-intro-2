@@ -1,30 +1,28 @@
-# This file is app/controllers/movies_controller.rb
+
 class MoviesController < ApplicationController
 
-  def index
-    @all_ratings = ['G', 'PG', 'PG-13', 'R']
-
-    if params[:ratings]
-      @movies = Movie.where(rating: params[:ratings].keys)
-    end
-
-    case params[:sort]
-    when 'title'
-      @movies = Movie.order('title ASC')
-      @title_hilite = 'hilite'
-    when 'release'
-      @movies = Movie.order('release_date ASC')
-      @release_hilite = 'hilite'
-    else
-      params[:ratings] ? @movies = Movie.where(rating: params[:ratings].keys) :
-                         @movies = Movie.all
-    end
+  def show
+    id = params[:id] 
+    @movie = Movie.find(id) 
   end
 
-  def show
-    id = params[:id] # retrieve movie ID from URI route
-    @movie = Movie.find(id) # Look up movie by unique ID
-    # will render app/views/movies/show.<extension> by default
+  def index
+		if params.key?(:sort_by)
+			session[:sort_by] = params[:sort_by]
+		elsif session.key?(:sort_by)
+			params[:sort_by] = session[:sort_by]
+			redirect_to movies_path(params) and return
+		end
+		@hilite = sort_by = session[:sort_by]
+		@all_ratings = Movie.all_ratings
+		if params.key?(:ratings)
+			session[:ratings] = params[:ratings]
+		elsif session.key?(:ratings)
+			params[:ratings] = session[:ratings]
+			redirect_to movies_path(params) and return
+		end
+		@checked_ratings = (session[:ratings].keys if session.key?(:ratings)) || @all_ratings
+    @movies = Movie.order(sort_by).where(rating: @checked_ratings)
   end
 
   def new
